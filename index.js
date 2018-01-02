@@ -29,7 +29,7 @@ function RadarChart(data, options) {
     //If the supplied maxValue is smaller than the actual one, replace by the max in the data
     var maxValue = Math.max(cfg.maxValue, d3.max(data, function(i) { return d3.max(i.map(function(o) { return o.value; })) }));
 
-    var allAxis = (data[0].map(function(i, j) { return i.axis })), //Names of each axis
+    var allAxis = (data[0].map(function(i, j) { return i.axis; })), //Names of each axis
         total = allAxis.length, //The number of different axes
         radius = Math.min(cfg.w / 2, cfg.h / 2), //Radius of the outermost circle
         Format = d3.format('%'), //Percentage formatting
@@ -119,14 +119,43 @@ function RadarChart(data, options) {
         .style("stroke-width", "1px");
 
     //Append the labels at each axis
+    // axis.append("text")
+    //     .attr("class", "legend")
+    //     .style("font-size", "14px")
+    //     .style("font", "Raleway")
+    //     .style("color", "#ccc")
+    //     .attr("transform", function(d, i) {
+    //         var x = 0,
+    //             y = 0,
+    //             rotation = (radius / 10) * i;
+
+    //         return "translate(" + x + "," + y + ") rotate(" + rotation + ")";
+    //     })
+    //     .attr("text-anchor", "middle")
+    //     .attr("dy", "0.35em")
+    //     .attr("x", function(d, i) { return rScale(maxValue * cfg.labelFactor) * Math.cos(angleSlice * i - Math.PI / 2); })
+    //     .attr("y", function(d, i) { return rScale(maxValue * cfg.labelFactor) * Math.sin(angleSlice * i - Math.PI / 2); })
+    //     .text(function(d) { return d; })
+    //     .call(wrap, cfg.wrapWidth);
+
     axis.append("text")
         .attr("class", "legend")
-        .style("font-size", "11px")
-        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("color", "#ccc")
         .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .each(function(d, i) {
+            console.log(d, i)
+        })
+        // .attr("transform", function(d, i) {
+        //     var x = 0,
+        //         y = 0,
+        //         r = (radius / data[0].length) * i;
+        //     return "translate(" + x + "," + y + ") rotate(" + r + ")";
+        // })
         .attr("x", function(d, i) { return rScale(maxValue * cfg.labelFactor) * Math.cos(angleSlice * i - Math.PI / 2); })
         .attr("y", function(d, i) { return rScale(maxValue * cfg.labelFactor) * Math.sin(angleSlice * i - Math.PI / 2); })
-        .text(function(d) { return d })
+        .text(function(d) { return d; })
         .call(wrap, cfg.wrapWidth);
 
     /////////////////////////////////////////////////////////
@@ -136,8 +165,9 @@ function RadarChart(data, options) {
     //The radial line function
     var radarLine = d3.radialLine()
         .curve(d3.curveLinearClosed)
-        .radius(function(d) { return rScale(d.value); })
+        .radius(function(d, i) { return rScale(d.value); })
         .angle(function(d, i) { return i * angleSlice; });
+
 
     if (cfg.roundStrokes) {
         radarLine.curve(d3.curveCardinalClosed);
@@ -155,23 +185,8 @@ function RadarChart(data, options) {
         .attr("class", "radarArea")
         .attr("d", function(d, i) { return radarLine(d); })
         .style("fill", function(d, i) { return cfg.color(i); })
-        .style("fill-opacity", cfg.opacityArea)
-        .on('mouseover', function(d, i) {
-            //Dim all blobs
-            d3.selectAll(".radarArea")
-                .transition().duration(200)
-                .style("fill-opacity", 0.1);
-            //Bring back the hovered over blob
-            d3.select(this)
-                .transition().duration(200)
-                .style("fill-opacity", 0.7);
-        })
-        .on('mouseout', function() {
-            //Bring back all blobs
-            d3.selectAll(".radarArea")
-                .transition().duration(200)
-                .style("fill-opacity", cfg.opacityArea);
-        });
+        .style("fill-rule", "evenodd")
+        .style("fill-opacity", cfg.opacityArea);
 
     //Create the outlines
     blobWrapper.append("path")
@@ -181,6 +196,26 @@ function RadarChart(data, options) {
         .style("stroke", function(d, i) { return cfg.color(i); })
         .style("fill", "none")
         .style("filter", "url(#glow)");
+
+    var pie = d3.pie().value(function(d) { return 1; });
+    var arc = d3.arc().outerRadius(radius);
+
+    // console.log(pie(data[0]))
+
+    // blobWrapper.append("path")
+    //     .data(pie(data[0]))
+    //     .enter()
+    //     .append("circle", arc)
+    //     .attr("class", "slices")
+    //     .attr("r", function(d, i) {
+    //         // console.log(radius / cfg.levels * d); 
+    //         return 300;
+    //     })
+    //     .style("fill", "#fff")
+    //     .style("stroke", "#fff")
+    //     .style("fill-opacity", cfg.opacityCircles)
+    //     // .style("filter", "url(#glow)");
+
 
     //Append the circles
     blobWrapper.selectAll(".radarCircle")
